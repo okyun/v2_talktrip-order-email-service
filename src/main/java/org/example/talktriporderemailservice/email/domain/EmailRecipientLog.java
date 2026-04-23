@@ -105,5 +105,31 @@ public class EmailRecipientLog {
     void prePersist() {
         if (createdAt == null) createdAt = Instant.now();
     }
+
+    public void updateMessage(String recipientEmail, String subject, String body) {
+        this.recipientEmail = recipientEmail;
+        this.subject = subject;
+        this.body = body;
+    }
+
+    public void markReceived() {
+        this.status = EmailRecipientLogStatus.RECEIVED;
+        this.errorMessage = null;
+    }
+
+    public void markSent() {
+        this.status = EmailRecipientLogStatus.SENT;
+        this.errorMessage = null;
+    }
+
+    public void markSkipped(String errorMessage) {
+        this.status = EmailRecipientLogStatus.SKIPPED;
+        this.errorMessage = errorMessage;
+    }
+
+    public void markFailed(String errorMessage) {
+        this.status = EmailRecipientLogStatus.FAILED;
+        this.errorMessage = errorMessage;
+    }
 }
 
