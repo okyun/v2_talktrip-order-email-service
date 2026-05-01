@@ -6,12 +6,14 @@ import org.example.talktriporderemailservice.email.repository.EmailRecipientLogR
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -45,6 +47,11 @@ public class PaymentSuccessEmailConsumer {
             topics = "${kafka.topics.payment-success:payment-success}",
             groupId = "talktrip-order-email-service",
             concurrency = "1"
+    )
+    @RetryableTopic(
+            attempts = "5",
+            backoff = @Backoff(delay = 1000, multiplier = 2),
+            dltTopicSuffix = ".dlt"
     )
     public void onPaymentSuccess(
             @Payload Map<String, Object> payload,
@@ -133,6 +140,7 @@ public class PaymentSuccessEmailConsumer {
             logger.error(
                     "[order-email] FAILED logId={}, from={}, to={}, orderId={}, orderCode={}, exClass={}, exMsg={}",
                     log.getId(), FROM_EMAIL, to, orderId, orderCode, e.getClass().getSimpleName(), e.getMessage(), e);
+            throw new RuntimeException("SMTP send failed after persistence", e);
         }
     }
 
